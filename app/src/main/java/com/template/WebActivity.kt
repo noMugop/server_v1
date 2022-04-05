@@ -34,15 +34,13 @@ class WebActivity : AppCompatActivity() {
         binding.btnStart.setOnClickListener {
             try {
                 sharedUrl = prefSettings.getString(LoadingActivity.KEY_URL, null) as String
+                val customTabsIntent = CustomTabsIntent.Builder().build()
+                customTabsIntent.launchUrl(this, Uri.parse(sharedUrl))
             } catch (e: Exception) {
                 Toast.makeText(applicationContext, "Пустая ссылка", Toast.LENGTH_SHORT).show()
             }
-            val customTabsIntent = CustomTabsIntent.Builder().build()
-            customTabsIntent.launchUrl(this, Uri.parse(sharedUrl))
         }
         putIntPref(1)
-        LoadingActivity.sharedActivity = prefSettings.getInt(LoadingActivity.KEY_INT, 0)
-        println("DONE_DONE ${LoadingActivity.sharedActivity}")
     }
 
     private fun putIntPref(numActivity: Int) {
@@ -53,7 +51,7 @@ class WebActivity : AppCompatActivity() {
     companion object {
 
         const val APP_SETTINGS = "Settings"
-        private var sharedUrl: String = ""
+        var sharedUrl: String = ""
     }
 
     override fun onDestroy() {

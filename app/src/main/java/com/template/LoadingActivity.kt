@@ -15,6 +15,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.FirebaseMessaging
+import com.template.WebActivity.Companion.sharedUrl
 import com.template.databinding.ActivityLoadingBinding
 import com.template.databinding.ActivityWebBinding
 import kotlinx.coroutines.CoroutineScope
@@ -24,6 +25,7 @@ import kotlinx.coroutines.launch
 import java.lang.Exception
 import java.util.*
 import kotlin.coroutines.CoroutineContext
+import kotlin.collections.isNullOrEmpty as isNullOrEmpty1
 
 
 class LoadingActivity : AppCompatActivity() {
@@ -51,7 +53,6 @@ class LoadingActivity : AppCompatActivity() {
 
         when (sharedActivity) {
             1 -> {
-                putStringIntoPref(URL)
                 startActivity(intentWebActivity)
                 binding.progressBar.visibility = View.GONE
             }
@@ -63,7 +64,6 @@ class LoadingActivity : AppCompatActivity() {
                 generateRequest()
             }
         }
-
     }
 
     private fun init() {
