@@ -28,17 +28,11 @@ import kotlin.coroutines.CoroutineContext
 
 class LoadingActivity : AppCompatActivity() {
 
-    private val intentMainActivity by lazy {
-        Intent(this, MainActivity::class.java)
-    }
+    lateinit var intentMainActivity: Intent
 
-    private val intentWebActivity by lazy {
-        Intent(this, WebActivity::class.java)
-    }
+    lateinit var intentWebActivity: Intent
 
-    private val binding by lazy {
-        ActivityLoadingBinding.inflate(layoutInflater)
-    }
+    lateinit var binding: ActivityLoadingBinding
 
     private lateinit var prefSettings: SharedPreferences
     private lateinit var editor: SharedPreferences.Editor
@@ -48,16 +42,35 @@ class LoadingActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        init()
         setContentView(binding.root)
 
         binding.progressBar.visibility = View.VISIBLE
 
-        init()
+        sharedActivity = prefSettings.getInt(KEY_INT, 0)
 
-        generateRequest()
+        when (sharedActivity) {
+            1 -> {
+                putStringIntoPref(URL)
+                startActivity(intentWebActivity)
+                binding.progressBar.visibility = View.GONE
+            }
+            2 -> {
+                startActivity(intentMainActivity)
+                binding.progressBar.visibility = View.GONE
+            }
+            else -> {
+                generateRequest()
+            }
+        }
+
     }
 
     private fun init() {
+
+        binding = ActivityLoadingBinding.inflate(layoutInflater)
+        intentWebActivity = Intent(this, WebActivity::class.java)
+        intentMainActivity = Intent(this, MainActivity::class.java)
 
         prefSettings = applicationContext?.getSharedPreferences(
             APP_SETTINGS, Context.MODE_PRIVATE
@@ -77,25 +90,30 @@ class LoadingActivity : AppCompatActivity() {
                 val data: HashMap<String, HashMap<String, String>> =
                     value.value as HashMap<String, HashMap<String, String>>
                 val link = data["db"]?.get("link")
-                val uniqueID = UUID.randomUUID().toString()
-                val tz = TimeZone.getDefault()
-                val urlValue =
-                    URLValue(
-                        url = "$link"
-                                + "/?packageid=com.template&usserid="
-                                + uniqueID
-                                + "&getz="
-                                + tz.id
-                                + "&getr=utm_source=google-play&utm_medium=organic"
-                    )
-                URL = urlValue.url
-                putStringIntoPref(URL)
-                startActivity(intentWebActivity)
-                binding.progressBar.visibility = View.GONE
+                if (!link.isNullOrEmpty()) {
+                    val uniqueID = UUID.randomUUID().toString()
+                    val tz = TimeZone.getDefault()
+                    val urlValue =
+                        URLValue(
+                            url = "$link"
+                                    + "/?packageid=com.template&usserid="
+                                    + uniqueID
+                                    + "&getz="
+                                    + tz.id
+                                    + "&getr=utm_source=google-play&utm_medium=organic"
+                        )
+                    URL = urlValue.url
+                    putStringIntoPref(URL)
+                    startActivity(intentWebActivity)
+                    binding.progressBar.visibility = View.GONE
+                } else {
+                    startActivity(intentMainActivity)
+                    binding.progressBar.visibility = View.GONE
+                }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                startActivity(intentMainActivity)
+
             }
         })
     }
@@ -109,8 +127,8 @@ class LoadingActivity : AppCompatActivity() {
 
         private var URL = ""
         var KEY_URL = "Url"
-        private var sharedUrl = ""
+        var KEY_INT = "Activity"
+        var sharedActivity = 0
         const val APP_SETTINGS = "Settings"
-
     }
 }
