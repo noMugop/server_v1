@@ -15,7 +15,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         prefSettings = applicationContext?.getSharedPreferences(
-            WebActivity.APP_SETTINGS, Context.MODE_PRIVATE
+            LoadingActivity.APP_SETTINGS, Context.MODE_PRIVATE
         ) as SharedPreferences
         editor = prefSettings.edit()
 

@@ -3,10 +3,12 @@ package com.template
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.net.Uri
 import android.os.Bundle
+import android.text.PrecomputedText
 import android.view.View
-import android.webkit.WebView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.browser.customtabs.CustomTabsIntent
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.ktx.analytics
 import com.google.firebase.database.DataSnapshot
@@ -15,26 +17,30 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.FirebaseMessaging
-import com.template.WebActivity.Companion.sharedUrl
 import com.template.databinding.ActivityLoadingBinding
-import com.template.databinding.ActivityWebBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.lang.Exception
+import org.json.JSONObject
+import java.io.BufferedReader
+import java.io.InputStream
+import java.io.InputStreamReader
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.*
+import javax.net.ssl.HttpsURLConnection
 import kotlin.coroutines.CoroutineContext
-import kotlin.collections.isNullOrEmpty as isNullOrEmpty1
+import kotlin.system.exitProcess
 
 
-class LoadingActivity : AppCompatActivity() {
+class LoadingActivity : AppCompatActivity(), CoroutineScope {
+
+    override val coroutineContext: CoroutineContext = Dispatchers.Main
 
     lateinit var intentMainActivity: Intent
-
-    lateinit var intentWebActivity: Intent
-
     lateinit var binding: ActivityLoadingBinding
+    lateinit var customTabsIntent: CustomTabsIntent
+    lateinit var apiService: ApiService
 
     private lateinit var prefSettings: SharedPreferences
     private lateinit var editor: SharedPreferences.Editor
@@ -45,6 +51,7 @@ class LoadingActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         init()
+
         setContentView(binding.root)
 
         binding.progressBar.visibility = View.VISIBLE
@@ -53,8 +60,8 @@ class LoadingActivity : AppCompatActivity() {
 
         when (sharedActivity) {
             1 -> {
-                startActivity(intentWebActivity)
-                binding.progressBar.visibility = View.GONE
+                sharedUrl = prefSettings.getString(KEY_URL, null) as String
+                customTabsIntent.launchUrl(applicationContext, Uri.parse(URL))
             }
             2 -> {
                 startActivity(intentMainActivity)
@@ -69,8 +76,11 @@ class LoadingActivity : AppCompatActivity() {
     private fun init() {
 
         binding = ActivityLoadingBinding.inflate(layoutInflater)
-        intentWebActivity = Intent(this, WebActivity::class.java)
         intentMainActivity = Intent(this, MainActivity::class.java)
+        customTabsIntent = CustomTabsIntent
+            .Builder()
+            .build()
+        customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
         prefSettings = applicationContext?.getSharedPreferences(
             APP_SETTINGS, Context.MODE_PRIVATE
@@ -89,22 +99,21 @@ class LoadingActivity : AppCompatActivity() {
                 val value: DataSnapshot = snapshot
                 val data: HashMap<String, HashMap<String, String>> =
                     value.value as HashMap<String, HashMap<String, String>>
-                val link = data["db"]?.get("link")
+                link = data["db"]?.get("link") as String
+                println("RESULT_LINK $link")
                 if (!link.isNullOrEmpty()) {
                     val uniqueID = UUID.randomUUID().toString()
                     val tz = TimeZone.getDefault()
-                    val urlValue =
-                        URLValue(
-                            url = "$link"
-                                    + "/?packageid=com.template&usserid="
-                                    + uniqueID
-                                    + "&getz="
-                                    + tz.id
-                                    + "&getr=utm_source=google-play&utm_medium=organic"
-                        )
-                    URL = urlValue.url
-                    putStringIntoPref(URL)
-                    startActivity(intentWebActivity)
+
+                    launch {
+                        apiService = ApiFactory.getInstance(link)
+                        URL = apiService.getURL(uuid = uniqueID, timezone = tz.id)
+                        putStringIntoPref(URL)
+
+                        customTabsIntent.launchUrl(applicationContext, Uri.parse(URL))
+                    }
+
+                    putIntPref(1)
                     binding.progressBar.visibility = View.GONE
                 } else {
                     startActivity(intentMainActivity)
@@ -118,6 +127,11 @@ class LoadingActivity : AppCompatActivity() {
         })
     }
 
+    private fun putIntPref(numActivity: Int) {
+        editor.putInt(KEY_INT, numActivity)
+        editor.commit()
+    }
+
     private fun putStringIntoPref(url: String) {
         editor.putString(KEY_URL, url)
         editor.commit()
@@ -125,10 +139,20 @@ class LoadingActivity : AppCompatActivity() {
 
     companion object {
 
+        private var link = ""
         private var URL = ""
         var KEY_URL = "Url"
         var KEY_INT = "Activity"
         var sharedActivity = 0
+        var sharedUrl: String = ""
         const val APP_SETTINGS = "Settings"
+    }
+
+    override fun onDestroy() {
+        moveTaskToBack(true)
+        finish()
+        super.onDestroy()
+
+        exitProcess(0);
     }
 }
