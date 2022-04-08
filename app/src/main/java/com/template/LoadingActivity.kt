@@ -54,6 +54,7 @@ class LoadingActivity : AppCompatActivity(), CoroutineScope {
                 sharedUrl = prefSettings.getString(KEY_URL, null) as String
 
                 customTabsIntent.launchUrl(applicationContext, Uri.parse(sharedUrl))
+                binding.progressBar.visibility = View.GONE
             }
             2 -> {
                 startActivity(intentMainActivity)
