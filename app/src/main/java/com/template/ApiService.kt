@@ -13,7 +13,7 @@ interface ApiService {
 
     @GET("/")
     suspend fun getURL(
-        @Query("packageid") template: String = "com.template",
+        @Query("packageid") template: String = BuildConfig.APPLICATION_ID,
         @Query("usserid") uuid: String,
         @Query("getz") timezone: String,
         @Query("getr") getr: String = "utm_source=google-play",

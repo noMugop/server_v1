@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
-import android.text.PrecomputedText
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.browser.customtabs.CustomTabsIntent
@@ -21,17 +20,9 @@ import com.template.databinding.ActivityLoadingBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.json.JSONObject
-import java.io.BufferedReader
-import java.io.InputStream
-import java.io.InputStreamReader
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.*
-import javax.net.ssl.HttpsURLConnection
 import kotlin.coroutines.CoroutineContext
 import kotlin.system.exitProcess
-
 
 class LoadingActivity : AppCompatActivity(), CoroutineScope {
 
@@ -61,7 +52,8 @@ class LoadingActivity : AppCompatActivity(), CoroutineScope {
         when (sharedActivity) {
             1 -> {
                 sharedUrl = prefSettings.getString(KEY_URL, null) as String
-                customTabsIntent.launchUrl(applicationContext, Uri.parse(URL))
+
+                customTabsIntent.launchUrl(applicationContext, Uri.parse(sharedUrl))
             }
             2 -> {
                 startActivity(intentMainActivity)
@@ -77,8 +69,10 @@ class LoadingActivity : AppCompatActivity(), CoroutineScope {
 
         binding = ActivityLoadingBinding.inflate(layoutInflater)
         intentMainActivity = Intent(this, MainActivity::class.java)
+
         customTabsIntent = CustomTabsIntent
             .Builder()
+            .setShowTitle(true)
             .build()
         customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
