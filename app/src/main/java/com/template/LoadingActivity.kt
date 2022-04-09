@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.browser.customtabs.CustomTabsIntent
 import com.google.firebase.analytics.FirebaseAnalytics
@@ -20,6 +21,7 @@ import com.template.databinding.ActivityLoadingBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.lang.Exception
 import java.util.*
 import kotlin.coroutines.CoroutineContext
 import kotlin.system.exitProcess
@@ -97,19 +99,24 @@ class LoadingActivity : AppCompatActivity(), CoroutineScope {
                 link = data["db"]?.get("link") as String
                 println("RESULT_LINK $link")
                 if (!link.isNullOrEmpty()) {
-                    val uniqueID = UUID.randomUUID().toString()
-                    val tz = TimeZone.getDefault()
-
+                    println("RESULT ENTER")
                     launch {
+                        val uniqueID = UUID.randomUUID().toString()
+                        val tz = TimeZone.getDefault()
                         apiService = ApiFactory.getInstance(link)
-                        URL = apiService.getURL(uuid = uniqueID, timezone = tz.id)
-                        putStringIntoPref(URL)
-
-                        customTabsIntent.launchUrl(applicationContext, Uri.parse(URL))
+                        try {
+                            URL = apiService.getURL(uuid = uniqueID, timezone = tz.id)
+                            println("RESULT $URL")
+                            putStringIntoPref(URL)
+                            customTabsIntent.launchUrl(applicationContext, Uri.parse(URL))
+                            putIntPref(1)
+                            binding.progressBar.visibility = View.GONE
+                        } catch (e: Exception) {
+                            Toast.makeText(applicationContext, "${e.message}", Toast.LENGTH_LONG).show()
+                            startActivity(intentMainActivity)
+                            binding.progressBar.visibility = View.GONE
+                        }
                     }
-
-                    putIntPref(1)
-                    binding.progressBar.visibility = View.GONE
                 } else {
                     startActivity(intentMainActivity)
                     binding.progressBar.visibility = View.GONE
