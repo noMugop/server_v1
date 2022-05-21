@@ -40,6 +40,15 @@ class ApiFactory() {
             }
         }
 
+        private fun getOkHttp(): OkHttpClient {
+            val okHttpClient = OkHttpClient.Builder()
+                .connectTimeout(60, TimeUnit.SECONDS)
+                .readTimeout(60, TimeUnit.SECONDS)
+                .addInterceptor(MyInterceptor())
+                .addInterceptor(getLoggingInterceptor())
+            return okHttpClient.build()
+        }
+
         class MyInterceptor: Interceptor {
             override fun intercept (chain: Interceptor.Chain): Response {
                 val user_agent = System.getProperty("http.agent")
@@ -55,19 +64,6 @@ class ApiFactory() {
 
                 return chain.proceed(newRequest)
             }
-        }
-
-        private fun getOkHttp(): OkHttpClient {
-            val okHttpClient = OkHttpClient.Builder()
-                .connectTimeout(60, TimeUnit.SECONDS)
-                .readTimeout(60, TimeUnit.SECONDS)
-                .addInterceptor(MyInterceptor())
-                .also {
-                    if (BuildConfig.DEBUG) {
-                        it.addInterceptor(getLoggingInterceptor())
-                    }
-                }
-            return okHttpClient.build()
         }
 
         private fun getLoggingInterceptor(
